@@ -17,3 +17,7 @@
 # 🔵 Somos Python Juniors
 
 - Sinta-se avontade para baixar e utilizar nosso código
+
+<h1>
+    <img src="final.gif">
+</h1>

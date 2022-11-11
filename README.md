@@ -5,7 +5,7 @@
 # 🔴 Sobre
 
 - Projeto de análise de dados Módulo 3 - **[Let's Code by ADA](https://letscode.com.br/)**
-- Professor : **[Alex Lima](https://www.linkedin.com/in/alexcavalera/)**
+- Professor : **Alex Lima**
 - Desenvolvido por **[Gleilson](https://www.linkedin.com/in/gleilsonpedro/),
                      [Tiago](https://www.linkedin.com/in/tiago-lima-917b70bb/),
                      [Nivea](https://www.linkedin.com/in/nivea-ester-sousa),

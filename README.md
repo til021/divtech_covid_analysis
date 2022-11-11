@@ -8,7 +8,9 @@
 - Professor : **[Alex Lima](https://www.linkedin.com/in/alexcavalera/)**
 - Desenvolvido por **[Gleilson](https://www.linkedin.com/in/gleilsonpedro/),
                      [Tiago](https://www.linkedin.com/in/tiago-lima-917b70bb/),
-                     Nivea, Alysson e [Renato](https://www.linkedin.com/in/avlisotan/)**
+                     [Nivea](https://www.linkedin.com/in/nivea-ester-sousa),
+                     [Alysson](https://www.linkedin.com/in/alysson-vinagre-b03714125)
+                      e [Renato](https://www.linkedin.com/in/avlisotan/)**
 
 
 - Base de Dados: **Escolhendo ainda a base**

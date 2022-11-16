@@ -410,22 +410,44 @@ app.layout = html.Div(children=[
     style={'textAlign': 'center'}),
     html.Div(children='vendedora de um mercado de animais, em Wuhan na China.',
     style={'textAlign': 'center'}),
-    html.Div(children='Inserir link.',
-    style={'textAlign': 'center'}),
-
-
-    
+        
 #option = ['Infectados Mês', 'Mortes Mês', 'Suspeitos Mês', 'Vacinado Mês', 'Completa Mês']
     dcc.Dropdown(['Infectados Mês', 'Mortes Mês', 'Suspeitos Mês', 'Vacinado Mês', 'Completa Mês'],
                     placeholder="Selecione o Gráfico",
                     searchable=False,
                     value='Completa Mês',
-                    id = 'Lista de Gráficos'),
+                    id = 'Lista de Gráficos',
+                    style = {'width': '100%', 'align-items': 'center', 'justify-content': 'center'}),
     dcc.Graph(
         id='graph_01',
         figure=fig_infec_susp_vacin_mortes
+    ),
+    dcc.Graph(
+        id='graph_02',
+        figure=fig_infec_mortes_covid
+    ),
+    dcc.Graph(
+        id='graph_03',
+        figure=fig_var_novas_inf_divul
+    ),
+    dcc.Graph(
+        id='graph_04',
+        figure=fig_var_novos_obit_div
+    ),
+    dcc.Graph(
+        id='graph_05',
+        figure=fig_boxplot
+    ),
+    dcc.Graph(
+        id='graph_06',
+        figure=fig_ipca_covid_ibov_usd
+    ),
+    dcc.Graph(
+        id='graph_07',
+        figure=fig_ipca_covid_ibov_usd_week
     )
-    
+  
+
 ])
 
 @app.callback(
@@ -492,8 +514,9 @@ def update_output(value):
                                         title='Comparando Novos casos, suspeitos, vacinados e Óbitos Mês',
                                         title_x = 0.5)
 
-        fig_infec_susp_vacin_mortes #f' Você Selecionou -> {value}'
+         #f' Você Selecionou -> {value}'
     return fig_infec_susp_vacin_mortes
+
 
 
 if __name__ == '__main__':

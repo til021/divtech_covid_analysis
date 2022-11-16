@@ -1,12 +1,9 @@
 ipywidgets==7.7.1
 yfinance
 requests
-mlxtend.preprocessing
+mlxtend
 matplotlib
-plotly.express
-plotly.graph_objects
-plotly.offline
-plotly.subplots
+plotly
 numpy
 pandas
 torch

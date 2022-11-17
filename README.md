@@ -25,6 +25,10 @@
 [![plotly](https://img.shields.io/badge/Plotly-239120?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com/python/)
 [![numpy](https://img.shields.io/badge/Numpy-777BB4?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/doc/)
 
+Está cansado de baixar um milhão de bibliotecas para visualizar novos projetos?  
+Nosso código já está totalmente integrado com o **GitHub Codespaces**!  
+Não é necessário instalar nenhum módulo novo na sua máquina!  
+Acesse o **Codespaces**, espere o programa carregar as bibliotecas, e você já pode começar a codar! 
 
 
 ---

@@ -550,6 +550,7 @@ app.layout = html.Div(children=[
                     style = {'textAlign': 'center','margin-left': '25%',
                     'margin-top': '1em', 'width': '50%', 
                     'align-items': 'center'}),
+    
     dcc.Graph(
         id='graph_01',
         figure=fig_infec_susp_vacin_mortes

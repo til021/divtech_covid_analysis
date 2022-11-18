@@ -28,8 +28,9 @@
 Está cansado de baixar um milhão de bibliotecas para visualizar novos projetos?  
 Nosso código já está totalmente integrado com o **GitHub Codespaces**!  
 Não é necessário instalar nenhum módulo novo na sua máquina!  
-Acesse o **Codespaces**, espere o programa carregar as bibliotecas, e você já pode começar a codar! 
+Acesse o **Codespaces**, espere o programa carregar as bibliotecas, e você já pode começar a codar!  
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=564319316)
 
 ---
 # 🔵 Somos Python Juniors 

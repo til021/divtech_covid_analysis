@@ -13,7 +13,16 @@
                       e [Renato](https://www.linkedin.com/in/avlisotan/)**
 
 
-- Base de Dados: **[Covid - 19](https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv)**
+- Bases de Dados Utilizadas neste Projeto:  
+
+    **Covid - 19: [cases-brazil-states.csv](https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv)**  
+    Disponibilizada por: **[10.1590/SciELOPreprints.362](https://github.com/wcota/covid19br/)**  
+    
+    **Índice nacional de preços ao consumidor-Amplo: [IPCA](https://dadosabertos.bcb.gov.br/dataset/4449-indice-nacional-de-precos-ao-consumidor-amplo-ipca---precos-monitorados---total)**  
+    Disponibilizada pelo **[Banco Central do Brasil](https://dadosabertos.bcb.gov.br/)**
+    
+    **Cotações da BOVESPA e do Dolar**  
+    Disponibilizada pelo **[Yahoo Finance](https://finance.yahoo.com/)** e obtida através da biblioteca **[yfinance](https://pypi.org/project/yfinance/)**
 ---
 # 🟢 Tech
 

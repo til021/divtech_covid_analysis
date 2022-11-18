@@ -1,13 +1,22 @@
+# Bibliotecas essênciais
 import pandas as pd
 import numpy as np
+
+# Ferramentas de API's
 import requests
 import yfinance as yf
-from dash import Dash, html, dcc, Input, Output
+
+# Ferramenta para redimensionar valores (rescaling)
+from mlxtend.preprocessing import minmax_scaling
+
+# Ferramentas de plotagem
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.offline import iplot
 from plotly.subplots import make_subplots
-from mlxtend.preprocessing import minmax_scaling
+
+#ferramenta para criação do Dashboard
+from dash import Dash, html, dcc, Input, Output
 
 response = requests.get("https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv")
 
@@ -49,7 +58,11 @@ days = pd.DataFrame({
 ## agregando os dados por mês e semana
 months = days.set_index("date").resample('M').sum()
 weeks = days.set_index("date").resample('W').sum()
-
+''' Fazendo essa agregação não podemos trabalhar com colunas de valores agregados. 
+Por exemplo, a coluna 'deaths' soma diversas vezes a coluna 'newDeaths', 
+e quando ela é agregada ela soma esses valores mais de uma vez!
+>>> Isso gera um número absurdo de casos, além de dados errados!
+'''
 # Reescalando os dados, facilitar a plotagem:
 scaled_months = minmax_scaling(months, columns = ["newCases","newDeaths", "suspects","vaccinated"])
 
@@ -171,6 +184,35 @@ days_var = days.set_index("date").pct_change()
 weeks_var = weeks.pct_change()
 months_var = months.pct_change()
 
+# Criando uma base de dados limpa:
+months_cleaned = pd.DataFrame({})
+
+# Identificando os outiliers da base:
+outliers = months_var["newCases"].between(months_var["newCases"].quantile(.05),months_var["newCases"].quantile(.9))
+
+# Removendo os outliers da tabela months e adicionando na tabela months_cleaned
+months_cleaned["newCases"] = pd.DataFrame(months_var["newCases"].multiply(outliers))
+
+# Fazendo a mesma coisa para a coluna de "newDeaths":
+outliers = months_var["newDeaths"].between(months_var["newDeaths"].quantile(.05),months_var["newDeaths"].quantile(.9))
+months_cleaned["newDeaths"] = pd.DataFrame(months_var["newDeaths"].multiply(outliers))
+
+# Removendo valores nulos:
+for column in months_cleaned.columns:
+    months_cleaned[column].replace({0:np.nan}, inplace = True)
+
+#  Removendo os outliers da tabela weekss e adicionando na tabela weeks_cleaned
+weeks_cleaned = pd.DataFrame({})
+
+outliers = weeks_var["newCases"].between(weeks_var["newCases"].quantile(.05),weeks_var["newCases"].quantile(.9))
+weeks_cleaned["newCases"] = pd.DataFrame(weeks_var["newCases"].multiply(outliers))
+
+outliers = weeks_var["newDeaths"].between(weeks_var["newDeaths"].quantile(.05),weeks_var["newDeaths"].quantile(.9))
+weeks_cleaned["newDeaths"] = pd.DataFrame(weeks_var["newDeaths"].multiply(outliers))
+
+for column in weeks_cleaned.columns:
+    weeks_cleaned[column].replace({0:np.nan}, inplace = True)
+
 # Criando um dicionário para os Dfs
 dfs = {"days" : days_var[2:], "weeks": weeks_var[2:], "months":months_var[2:]}
 
@@ -243,7 +285,7 @@ for item in out_dict:
     fig_boxplot.add_trace(go.Box(y=out_dict[item], name = f"{item}"))
 
 fig_boxplot.update_layout(height=600,
-                            width=1000,
+                            width=1400,
                             title_text="Box Plot das Variações",
                             title_font_size=20,
                             title_font_color='black',
@@ -264,16 +306,62 @@ ipca_df = pd.DataFrame(ipca[1:], columns= ipca[0])
 ipca_df = ipca_df[:-1]
 # Colocando a data no formato datetime:
 ipca_df["data"] = pd.to_datetime(ipca_df["data"], format="%d/%m/%Y")
+# Subtraindo um dia da data, de modo a igualar com a data das tabelas do covid:
+ipca_df["data"] = ipca_df["data"]-pd.Timedelta(days=1)
 # Trocando os pontos por vírgulas:
 ipca_df["valor"] = [row.replace(",", ".") for row in ipca_df["valor"]]
 # Colocando o valor no formato float:
 ipca_df["valor"] = ipca_df["valor"].astype(float)
 # Separando um dataframe para analizar o IPCA entre 2020 e os dias atuais:
-ipca = ipca_df.loc[ipca_df["data"]>="2020-03-01"]
+ipca = ipca_df.loc[ipca_df["data"]>="2020-02-09"]
+# Juntando os dados do covid com os dados do IPCA:
+months_ipca = pd.merge_ordered(months_cleaned, ipca["valor"], left_on = months_cleaned.index, right_on = ipca["data"])
+months_ipca.rename(columns = {"valor":"ipca"}, inplace=True)
 # Dicionário para o Df:
 dict_ipca = {"ipca" : ipca[2:], "covid": months_var[2:]}
+# Reescalando os dados, facilitar a plotagem:
+scaled_months_ipca = minmax_scaling(months_ipca.set_index("key_0"), 
+                                    columns = ["newCases","newDeaths", "ipca"])
+scaled_months_ipca.tail()
+months_heatmap = scaled_months_ipca.dropna().corr().round(decimals=2)
+heatmap_dict = {'z': months_heatmap.values.tolist(),
+                'x': ["Novas Infecções", "Novos Óbitos", "IPCA"],
+                'y': ["Novas Infecções", "Novos Óbitos", "IPCA"]}
 
-# nnono plot - 'Variações Mensais: IPCA x Casos de Covid'
+# nono plot - Correlações Mensais do IPCA com a Covid
+fig_corr_mes_ipca_covid = go.Figure(data=go.Heatmap(heatmap_dict,
+                               text = months_heatmap.values.tolist(),
+                               texttemplate="%{text}",
+                               textfont={"size":20}))
+
+fig_corr_mes_ipca_covid.update_layout(showlegend = False,
+                  width = 500, height = 500,
+                  autosize = False,
+                  title = "Correlações Mensais do IPCA com a Covid",
+                  font_size = 16)
+
+fig_corr_mes_ipca_covid.update_yaxes(tickangle = 270, linewidth = 5, tickfont_size =18)
+fig_corr_mes_ipca_covid.update_xaxes(linewidth = 5, tickfont_size =18)
+
+# décimo plot - Variações Mensais: IPCA x Casos de Covid
+fig_line_covid_ipca = go.Figure()
+fig_line_covid_ipca = fig_line_covid_ipca.add_trace(go.Scatter(x = scaled_months_ipca.dropna().index,
+                               y =  scaled_months_ipca.dropna()["ipca"], 
+                               name = "IPCA no Brasil"))
+
+fig_line_covid_ipca = fig_line_covid_ipca.add_trace(go.Scatter(x = scaled_months_ipca.dropna().index,
+                               y = scaled_months_ipca.dropna()["newCases"], 
+                               name = "Número de Infecções"))
+
+fig_line_covid_ipca = fig_line_covid_ipca.add_trace(go.Scatter(x = scaled_months_ipca.dropna().index,
+                               y = scaled_months_ipca.dropna()["newDeaths"], 
+                               name = "Número de Óbitos"))
+
+fig_line_covid_ipca.update_layout(
+    title='Variações Mensais: IPCA x Casos de Covid'
+)
+
+# décimo primeiro plot - 'Variações Mensais: IPCA x Casos de Covid'
 fig_ipca_x_covid = go.Figure()
 fig_ipca_x_covid = fig_ipca_x_covid.add_trace(go.Scatter(x = dict_ipca["ipca"]["data"],
                                y = dict_ipca["ipca"]["valor"],
@@ -295,6 +383,7 @@ fig_ipca_x_covid.update_layout(
                             title_font_size=20,
                             title_font_color='black',
                             title_x=0.5)
+
 # comparação dos casos de covid bolsa de valores e dolar
 ibov_month = yf.download('^bvsp', start='2020-01-01', end="2022-11-01", interval='1mo')
 usd_month = yf.download('USDBRL=X', start='2020-01-01', end="2022-11-01", interval='1mo')
@@ -309,10 +398,51 @@ usd_mvar = usd_month.pct_change()
 ibov_wvar = ibov_week.pct_change()
 usd_wvar = usd_week.pct_change()
 
+# Unindo as informações da Bolsa com o Dataframe do IPCA
+bolsa_months = scaled_months_ipca
+bolsa_months = pd.DataFrame(bolsa_months.reset_index())
+#bolsa_months["ibov"] = [row for row in ibov_mvar["Close"][2:]]
+#bolsa_months["usd"] = [row for row in usd_mvar["Close"][2:]]
+
+# Reescalando o dataframe:
+#scaled_bolsa_months = minmax_scaling(bolsa_months.set_index("key_0"), 
+#                                    columns = ["newCases","newDeaths", "ipca", "ibov", "usd"])
+
 # Criando o dicionário:
 dict_ibov_m = {"ipca" : ipca[4:], "covid": months_var[2:], "ibov":ibov_mvar[4:], "usd":usd_mvar[4:]}
 
-# décimo plot - 'Variações Mensais: IPCA, IBOV, USD e Casos de Covid'
+#decimo segundo plot - Correlações Mensais: IBOV, USD, IPCA e Casos de Covid
+#fig_corr_m_ibov_usd_ipca = px.imshow(scaled_bolsa_months.dropna().corr().round(decimals=2),
+#                text_auto=True,
+#                title = "Correlações Mensais: IBOV, USD, IPCA e Casos de Covid")
+
+#decimo terceiro plot - Variações Mensais: IBOV, USD, IPCA e Casos de Covid
+#fig_vm_bolsas_covid_covid = go.Figure()
+#fig_vm_bolsas_covid_covid = fig_vm_bolsas_covid_covid.add_trace(go.Scatter(x = scaled_bolsa_months.dropna().index,
+#                               y =  scaled_bolsa_months.dropna()["ipca"], 
+#                               name = "IPCA no Brasil"))
+#
+#fig_vm_bolsas_covid_covid = fig_vm_bolsas_covid_covid.add_trace(go.Scatter(x = scaled_bolsa_months.dropna().index,
+#                               y = scaled_bolsa_months.dropna()["newCases"], 
+#                               name = "Número de Infecções"))
+#
+#fig_vm_bolsas_covid_covid = fig_vm_bolsas_covid_covid.add_trace(go.Scatter(x = scaled_bolsa_months.dropna().index,
+#                               y = scaled_bolsa_months.dropna()["newDeaths"], 
+#                               name = "Número de Óbitos"))
+#
+#fig_vm_bolsas_covid_covid = fig_vm_bolsas_covid_covid.add_trace(go.Scatter(x = scaled_bolsa_months.dropna().index,
+#                               y = scaled_bolsa_months.dropna()["ibov"], 
+#                               name = "Bolsa de Valores"))
+#
+#fig_vm_bolsas_covid_covid = fig_vm_bolsas_covid_covid.add_trace(go.Scatter(x = scaled_bolsa_months.dropna().index,
+#                               y = scaled_bolsa_months.dropna()["usd"], 
+#                               name = "Cotações do Dolar"))
+#
+#fig_vm_bolsas_covid_covid.update_layout(
+#    title='Variações Mensais: IBOV, USD, IPCA e Casos de Covid'
+#)
+
+# décimo terceiro plot - 'Variações Mensais: IPCA, IBOV, USD e Casos de Covid'
 fig_ipca_covid_ibov_usd = go.Figure()
 fig_ipca_covid_ibov_usd = fig_ipca_covid_ibov_usd.add_trace(go.Scatter(x = dict_ibov_m["ipca"]["data"],
                                y = dict_ibov_m["ipca"]["valor"], 
@@ -417,7 +547,9 @@ app.layout = html.Div(children=[
                     searchable=False,
                     value='Completa Mês',
                     id = 'Lista de Gráficos',
-                    style = {'width': '100%', 'align-items': 'center', 'justify-content': 'center'}),
+                    style = {'textAlign': 'center','margin-left': '25%',
+                    'margin-top': '1em', 'width': '50%', 
+                    'align-items': 'center'}),
     dcc.Graph(
         id='graph_01',
         figure=fig_infec_susp_vacin_mortes
@@ -440,13 +572,24 @@ app.layout = html.Div(children=[
     ),
     dcc.Graph(
         id='graph_06',
-        figure=fig_ipca_covid_ibov_usd
+        figure=fig_corr_mes_ipca_covid
     ),
     dcc.Graph(
         id='graph_07',
+        figure=fig_line_covid_ipca
+    ),
+    dcc.Graph(
+        id='graph_08',
+        figure=fig_ipca_x_covid
+    ),
+    dcc.Graph(
+        id='graph_09',
+        figure=fig_ipca_covid_ibov_usd
+    ),
+    dcc.Graph(
+        id='graph_10',
         figure=fig_ipca_covid_ibov_usd_week
     )
-  
 
 ])
 

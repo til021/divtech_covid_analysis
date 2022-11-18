@@ -473,19 +473,19 @@ app.layout = html.Div(children=[
     ),
     dcc.Graph(
         id='graph_06',
-        figure=fig_corr_mes_ipca_covid
-    ),
-    dcc.Graph(
-        id='graph_07',
         figure=fig_line_covid_ipca
     ),
     dcc.Graph(
+        id='graph_07',
+        figure=fig_corr_mes_ipca_covid
+    ),
+    dcc.Graph(
         id='graph_08',
-        figure=fig_corr_m_ibov_usd_ipca
+        figure=fig_vm_bolsas_covid_covid
     ),
     dcc.Graph(
         id='graph_09',
-        figure=fig_vm_bolsas_covid_covid
+        figure=fig_corr_m_ibov_usd_ipca
     )
 
 ])

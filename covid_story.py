@@ -502,14 +502,7 @@ app.layout = html.Div(children=[
         figure=fig_infec_mortes_covid
         
     ),
-    #dcc.Graph(
-    #    id='graph_03',
-    #    figure=fig_var_novas_inf_divul
-    #),
-    #dcc.Graph(
-    #    id='graph_04',
-    #    figure=fig_var_novos_obit_div
-    #),
+ 
     dcc.Graph(
         id='graph_05',
         figure=fig_boxplot,

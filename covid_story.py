@@ -16,7 +16,8 @@ from plotly.offline import iplot
 from plotly.subplots import make_subplots
 
 #ferramenta para criação do Dashboard
-from dash import Dash, html, dcc, Input, Output
+from dash import Dash, html, dcc, Input, Output, State
+
 
 response = requests.get("https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv")
 
@@ -297,26 +298,63 @@ ipca = requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.4449/dados?fo
 ##### TRATAMENTO DE DADOS
 ipca = ipca.content.decode("utf-8")
 ipca = [x.split(';') for x in ipca.split('\r\n')]
+
 # Removendo as aspas ("") prensentes em cada item do dataframe:
 for row in range(0, len(ipca)):
     for item in range(0, len(ipca[row])):
         ipca[row][item] = ipca[row][item].replace('\"', "")
 ipca_df = pd.DataFrame(ipca[1:], columns= ipca[0])
+
 # Removendo a última linha, que possui valores nulos:
-ipca_df = ipca_df[:-1]
+ipca_df = ipca_df[:-1] 
+
 # Colocando a data no formato datetime:
 ipca_df["data"] = pd.to_datetime(ipca_df["data"], format="%d/%m/%Y")
+
 # Subtraindo um dia da data, de modo a igualar com a data das tabelas do covid:
 ipca_df["data"] = ipca_df["data"]-pd.Timedelta(days=1)
+
 # Trocando os pontos por vírgulas:
 ipca_df["valor"] = [row.replace(",", ".") for row in ipca_df["valor"]]
+
 # Colocando o valor no formato float:
 ipca_df["valor"] = ipca_df["valor"].astype(float)
+
 # Separando um dataframe para analizar o IPCA entre 2020 e os dias atuais:
 ipca = ipca_df.loc[ipca_df["data"]>="2020-02-09"]
+
+
+# Dicionário para o Df:
+dict_ipca = {"ipca" : ipca[2:], "covid": months_var[2:]}
+
+# plot the data
+fig_ipca_x_covid = go.Figure()
+fig_ipca_x_covid = fig_ipca_x_covid.add_trace(go.Scatter(x = dict_ipca["ipca"]["data"],
+                               y = dict_ipca["ipca"]["valor"],
+                               name = "IPCA no Brasil",
+                               line = dict(color='blue')))
+
+fig_ipca_x_covid = fig_ipca_x_covid.add_trace(go.Scatter(x = dict_ipca["covid"].index,
+                               y = dict_ipca["covid"]["newCases"], 
+                               name = "Número de Infecções",
+                               line = dict(color='orange')))
+
+fig_ipca_x_covid = fig_ipca_x_covid.add_trace(go.Scatter(x = dict_ipca["covid"].index,
+                               y = dict_ipca["covid"]["newDeaths"], 
+                               name = "Número de Óbitos",
+                               line = dict(color='red')))
+
+fig_ipca_x_covid.update_layout(
+                            title='Variações Mensais: IPCA x Casos de Covid',
+                            title_font_size=20,
+                            title_font_color='black',
+                            title_x=0.5)
+
+
 # Juntando os dados do covid com os dados do IPCA:
 months_ipca = pd.merge_ordered(months_cleaned, ipca["valor"], left_on = months_cleaned.index, right_on = ipca["data"])
 months_ipca.rename(columns = {"valor":"ipca"}, inplace=True)
+
 # Reescalando os dados, facilitar a plotagem:
 scaled_months_ipca = minmax_scaling(months_ipca.set_index("key_0"), 
                                     columns = ["newCases","newDeaths", "ipca"])
@@ -329,15 +367,17 @@ heatmap_dict = {'z': months_heatmap.values.tolist(),
 # nono plot - Correlações Mensais do IPCA com a Covid
 fig_corr_mes_ipca_covid = go.Figure(data=go.Heatmap(heatmap_dict,
                                text = months_heatmap.values.tolist(),
+                               type = 'heatmap',
+                               colorscale = 'rainbow',
                                texttemplate="%{text}",
-                               textfont={"size":20}))
+                               textfont={"size":18}))
 fig_corr_mes_ipca_covid.update_layout(showlegend = False,
-                  width = 500, height = 500,
+                  width = 600, height = 600,
                   autosize = False,
                   title = "Correlações Mensais do IPCA com a Covid",
                   font_size = 16)
-fig_corr_mes_ipca_covid.update_yaxes(tickangle = 270, linewidth = 5, tickfont_size =18)
-fig_corr_mes_ipca_covid.update_xaxes(linewidth = 5, tickfont_size =18)
+fig_corr_mes_ipca_covid.update_yaxes(tickangle = 270, linewidth = 5, tickfont_size =14)
+fig_corr_mes_ipca_covid.update_xaxes(linewidth = 5, tickfont_size =14)
 
 # décimo plot - Variações Mensais: IPCA x Casos de Covid
 fig_line_covid_ipca = go.Figure()
@@ -385,6 +425,8 @@ scaled_bolsa_months = minmax_scaling(bolsa_months.set_index("key_0"),
 #decimo segundo plot - Correlações Mensais: IBOV, USD, IPCA e Casos de Covid
 fig_corr_m_ibov_usd_ipca = px.imshow(scaled_bolsa_months.dropna().corr().round(decimals=2),
                 text_auto=True,
+                width = 600, height = 600,
+                color_continuous_scale='Portland',
                 title = "Correlações Mensais: IBOV, USD, IPCA e Casos de Covid")
 
 #decimo terceiro plot - Variações Mensais: IBOV, USD, IPCA e Casos de Covid
@@ -458,34 +500,49 @@ app.layout = html.Div(children=[
     dcc.Graph(
         id='graph_02',
         figure=fig_infec_mortes_covid
+        
     ),
-    dcc.Graph(
-        id='graph_03',
-        figure=fig_var_novas_inf_divul
-    ),
-    dcc.Graph(
-        id='graph_04',
-        figure=fig_var_novos_obit_div
-    ),
+    #dcc.Graph(
+    #    id='graph_03',
+    #    figure=fig_var_novas_inf_divul
+    #),
+    #dcc.Graph(
+    #    id='graph_04',
+    #    figure=fig_var_novos_obit_div
+    #),
     dcc.Graph(
         id='graph_05',
-        figure=fig_boxplot
-    ),
-    dcc.Graph(
-        id='graph_06',
-        figure=fig_corr_mes_ipca_covid
+        figure=fig_boxplot,
+        style = {'textAlign': 'center',
+                    'margin-top': '1em',
+                    'align-items': 'center'}
     ),
     dcc.Graph(
         id='graph_07',
-        figure=fig_line_covid_ipca
+        figure=fig_ipca_x_covid
     ),
     dcc.Graph(
         id='graph_08',
-        figure=fig_corr_m_ibov_usd_ipca
+        figure=fig_line_covid_ipca
     ),
     dcc.Graph(
         id='graph_09',
+        figure=fig_corr_mes_ipca_covid,
+        style = {'textAlign': 'center','margin-left': '25%',
+                    'margin-top': '1em', 'width': '50%', 
+                    'align-items': 'center'}
+    ),
+    
+    dcc.Graph(
+        id='graph_10',
         figure=fig_vm_bolsas_covid_covid
+    ),
+    dcc.Graph(
+        id='graph_11',
+        figure=fig_corr_m_ibov_usd_ipca,
+        style = {'textAlign': 'center','margin-left': '25%',
+                    'margin-top': '1em', 'width': '50%', 
+                    'align-items': 'center'}
     )
 
 ])
